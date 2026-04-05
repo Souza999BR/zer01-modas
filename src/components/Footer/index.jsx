@@ -31,7 +31,7 @@ export function Footer() {
       </div>
 
       <p>
-        Copyright Zer01 Modas S.A. © - adfufhuwghioqead, 2984 - Centro - Pentecoste/CE CEP: 62640-000 CNPJ: 37.924.162/0001-26 - Todos os direitos reservados
+        Copyright Baby Modas S.A. © - adfufhuwghioqead,  Centro - rodonopolis/MT CEP: 78745638 CNPJ: 37.924.***/****-*** - Todos os direitos reservados Souza
       </p>
 
     </Container>
