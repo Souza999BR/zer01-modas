@@ -25,8 +25,6 @@ export function EditCatalog({ ...rest }) {
   const [ promotion, setPromotion ] = useState("");
   const [ description, setDescription ] = useState("");
 
-  // LOGIN ADMIN
-  const [authorized, setAuthorized] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const adminEmail = "babybarbara083@gmail.com";
@@ -34,7 +32,7 @@ export function EditCatalog({ ...rest }) {
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  // VERIFICAR LOGIN
+  // 🔐 VERIFICAR ADMIN
   function checkAdmin() {
     const user = JSON.parse(localStorage.getItem("userLogged"));
 
@@ -44,14 +42,13 @@ export function EditCatalog({ ...rest }) {
       return false;
     }
 
-    if(user.email === adminEmail && user.admin === true) {
-      setAuthorized(true);
+    if(user.email === adminEmail) {
       setIsAdmin(true);
       return true;
-    } else {
-      createNotification("Apenas administrador pode editar");
-      return false;
     }
+
+    createNotification("Apenas administrador pode editar");
+    return false;
   }
 
   async function handleNewProduct() {
@@ -59,7 +56,7 @@ export function EditCatalog({ ...rest }) {
 
     verifyValues();
 
-    if(name != "" && price != "" && description != "") {
+    if(name && price && description) {
       try {
         const product_id = await createProduct({ name, category, price, promotion, description });
         await AddAttributes(product_id);
@@ -107,17 +104,10 @@ export function EditCatalog({ ...rest }) {
     const divName = document.querySelector("#inputName");
     const divPrice = document.querySelector("#inputPrice");
     const divDescription = document.querySelector(".textarea");
-    const formDivs = [ divName, divPrice ];
 
-    for(let div of formDivs) {
-      if(div.querySelector("input").value == "") {
-        createErrorMessage(div);
-      }
-    }
-    
-    if(divDescription.querySelector("textarea").value == "") {
-      createErrorMessage(divDescription);
-    }
+    if(divName.querySelector("input").value == "") createErrorMessage(divName);
+    if(divPrice.querySelector("input").value == "") createErrorMessage(divPrice);
+    if(divDescription.querySelector("textarea").value == "") createErrorMessage(divDescription);
   }
 
   function clearPage() {
@@ -125,9 +115,7 @@ export function EditCatalog({ ...rest }) {
     const select = document.querySelector(".label_select select");
     const textarea = document.querySelector("#textarea");
 
-    Array.from(allInputs).map(input => {
-      input.value = "";
-    });
+    allInputs.forEach(input => input.value = "");
 
     select.value = "FEMININO";
     textarea.value = "";
@@ -143,12 +131,11 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
-  // VERIFICAR SE JÁ ESTÁ LOGADO
+  // 🔥 DETECTAR ADMIN AO ABRIR
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("userLogged"));
 
-    if(user && user.email === adminEmail && user.admin === true) {
-      setAuthorized(true);
+    if(user && user.email === adminEmail) {
       setIsAdmin(true);
     }
   }, []);
@@ -175,18 +162,22 @@ export function EditCatalog({ ...rest }) {
   return (
     <Container {...rest}>
 
-      {isAdmin && <Button title="Logout" onClick={() => {
-        localStorage.removeItem("userLogged");
-        setAuthorized(false);
-        setIsAdmin(false);
-        createNotification("Logout realizado");
-      }} />}
+      {isAdmin && (
+        <Button 
+          title="Logout" 
+          onClick={() => {
+            localStorage.removeItem("userLogged");
+            setIsAdmin(false);
+            createNotification("Logout realizado");
+          }} 
+        />
+      )}
 
       <Input id="inputName" title="Nome" placeholder="Nome do produto" onChange={e => setName(e.target.value)} />
 
-      <label className="label_select" id="categoryLabel" htmlFor="categoria">
+      <label className="label_select" id="categoryLabel">
         Categoria:
-        <select name="categoria" defaultValue="FEMININO" onChange={e => setCategory(e.target.value)}>
+        <select defaultValue="FEMININO" onChange={e => setCategory(e.target.value)}>
           <option value="FEMININO">Feminino</option>
           <option value="MASCULINO">Masculino</option>
           <option value="INFANTIL">Infantil</option>
@@ -201,28 +192,22 @@ export function EditCatalog({ ...rest }) {
 
       <div className="colors">
         <p>Cores</p>
-        <div className="tags">
-          <ChangeColor />
-        </div>
+        <ChangeColor />
       </div>
 
       <div className="details">
         <p>Detalhes</p>
-        <div className="tags">
-          <OutfitTag $detail />
-        </div>
+        <OutfitTag $detail />
       </div>
 
       <div className="modelDetails">
         <p>Medidas do(a) modelo</p>
-        <div className="tags">
-          <OutfitTag $modelDetail />
-        </div>
+        <OutfitTag $modelDetail />
       </div>
 
-      <label className="textarea" htmlFor="textarea">
+      <label className="textarea">
         Descrição
-        <textarea id="textarea" cols="30" rows="10" placeholder="Breve descrição sobre o produto" onChange={e => setDescription(e.target.value)}></textarea>
+        <textarea id="textarea" onChange={e => setDescription(e.target.value)}></textarea>
       </label>
 
       {

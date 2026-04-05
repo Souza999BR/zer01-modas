@@ -53,7 +53,7 @@ export function Login() {
           email,
           password,
           orders: [],
-          admin: false
+          admin: email === adminEmail // se cadastrar com email admin vira admin
         };
 
         users.push(newUser);
@@ -84,16 +84,17 @@ export function Login() {
       try {
         let user;
 
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
         // LOGIN ADMIN
         if(email === adminEmail && password === adminPassword) {
           user = {
             name: "Administrador",
             email: adminEmail,
-            admin: true
+            admin: true,
+            orders: []
           };
         } else {
-          const users = JSON.parse(localStorage.getItem("users")) || [];
-
           user = users.find(
             user => user.email === email && user.password === password
           );
@@ -103,7 +104,12 @@ export function Login() {
             return;
           }
 
-          user.admin = false;
+          // garantir que admin continue admin
+          if(user.email === adminEmail) {
+            user.admin = true;
+          } else {
+            user.admin = false;
+          }
         }
 
         // SALVAR SESSÃO
@@ -168,7 +174,6 @@ export function Login() {
     const userLogged = JSON.parse(localStorage.getItem("userLogged"));
 
     if(userLogged) {
-      // usuário já logado, não precisa abrir login
       const modal = document.querySelector(".modal-login");
       if(modal) modal.close();
     }
