@@ -35,7 +35,7 @@ export function Nav() {
   }
 
   async function navigateCatalog({ button, title, index }) {
-    sessionStorage.setItem("@zer01modas:mainslide", index);
+    sessionStorage.setItem("@Babymodas:mainslide", index);
     setMainSlide(index);
     setMainButton(button);
 
@@ -44,7 +44,7 @@ export function Nav() {
 
   useEffect(() => {
     //verificar se ja existe um valor de slide principa(button em destaque) no armazenamento;
-    const mainSlideValueLocalStorage = sessionStorage.getItem("@zer01modas:mainslide");
+    const mainSlideValueLocalStorage = sessionStorage.getItem("@Babymodas:mainslide");
     if(mainSlideValueLocalStorage) {
       setMainSlide(mainSlideValueLocalStorage);
     }

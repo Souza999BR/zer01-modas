@@ -13,7 +13,7 @@ export function Footer() {
 
       <div>
         <span>
-          <p> Zer01  nas redes sociais </p>
+          <p> Baby Modas nas redes sociais </p>
           <IoLogoInstagram />
           <AiFillYoutube />
           <BiLogoFacebook />
@@ -24,8 +24,8 @@ export function Footer() {
 
         <span>
           <p> Fale conosco </p>
-          <p> (85) 99999-9999 </p>
-          <p> (85) 99999-9999 </p>
+          <p> (66) 99696-5128 </p>
+          <p> (66) 99641-3924 </p>
         </span>
 
       </div>

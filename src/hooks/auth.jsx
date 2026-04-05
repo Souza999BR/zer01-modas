@@ -16,14 +16,14 @@ function AuthProvider({ children }) {
 
     api.defaults.headers.authorization = `Bearer ${ response.data.token }`;
 
-    localStorage.setItem("@zer01modas:userData", JSON.stringify(response.data));
+    localStorage.setItem("@Babymodas:userData", JSON.stringify(response.data));
     setUserData(response.data);
 
     if(response.data.user.isAdmin == 1) {
-      localStorage.setItem("@zer01modas:isAdmin", JSON.stringify(true));
+      localStorage.setItem("@Babymodas:isAdmin", JSON.stringify(true));
       setIsAdmin(true);
     } else {
-      localStorage.setItem("@zer01modas:isAdmin", JSON.stringify(false));
+      localStorage.setItem("@Babymodas:isAdmin", JSON.stringify(false));
       setIsAdmin(false);
     }
   }
@@ -31,8 +31,8 @@ function AuthProvider({ children }) {
   function SignOut() {
     setUserData("");
     setIsAdmin(false);
-    localStorage.removeItem("@zer01modas:userData");
-    localStorage.removeItem("@zer01modas:isAdmin");
+    localStorage.removeItem("@Babymodas:userData");
+    localStorage.removeItem("@Babymodas:isAdmin");
   }
 
   async function updateUser({ oldPassword, email, password }) {
@@ -40,8 +40,8 @@ function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const userLocalStorage = JSON.parse(localStorage.getItem("@zer01modas:userData"));
-    const isAdminLocalStorage = JSON.parse(localStorage.getItem("@zer01modas:isAdmin"));
+    const userLocalStorage = JSON.parse(localStorage.getItem("@Babymodas:userData"));
+    const isAdminLocalStorage = JSON.parse(localStorage.getItem("@Babymodas:isAdmin"));
 
     if(userLocalStorage) {
       api.defaults.headers.authorization = `Bearer ${ userLocalStorage.token }`;
