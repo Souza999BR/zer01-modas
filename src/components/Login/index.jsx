@@ -17,6 +17,9 @@ export function Login() {
 
   const navigate = useNavigate();
 
+  const adminEmail = "babybarbara083@gmail.com";
+  const adminPassword = "anjonegro21";
+
   // CADASTRO
   async function handleSignUp() {
     if(!name) {
@@ -49,7 +52,8 @@ export function Login() {
           name,
           email,
           password,
-          orders: []
+          orders: [],
+          admin: false
         };
 
         users.push(newUser);
@@ -78,27 +82,45 @@ export function Login() {
 
     if(email != "" && password != "") {
       try {
-        const users = JSON.parse(localStorage.getItem("users")) || [];
+        let user;
 
-        const user = users.find(
-          user => user.email === email && user.password === password
-        );
+        // LOGIN ADMIN
+        if(email === adminEmail && password === adminPassword) {
+          user = {
+            name: "Administrador",
+            email: adminEmail,
+            admin: true
+          };
+        } else {
+          const users = JSON.parse(localStorage.getItem("users")) || [];
 
-        if(!user) {
-          createNotification("Email ou senha incorretos");
-          return;
+          user = users.find(
+            user => user.email === email && user.password === password
+          );
+
+          if(!user) {
+            createNotification("Email ou senha incorretos");
+            return;
+          }
+
+          user.admin = false;
         }
 
+        // SALVAR SESSÃO
         localStorage.setItem("userLogged", JSON.stringify(user));
 
         createNotification("Login realizado :)");
 
         if(window.innerWidth >= 1000) {
-          document.querySelector(".modal-login").close();
+          const modal = document.querySelector(".modal-login");
+          if(modal) modal.close();
+
           sessionStorage.removeItem("@zer01modas:modal");
-          document.querySelector(".boxButtons .nav-menu").style.display = "none";
+
+          const nav = document.querySelector(".boxButtons .nav-menu");
+          if(nav) nav.style.display = "none";
         } else {
-          navigate(-1);
+          navigate("/");
         }
 
       } catch(error) {
@@ -140,6 +162,17 @@ export function Login() {
     setAccount(false);
     resetInputs();
   }
+
+  // MANTER USUÁRIO LOGADO
+  useEffect(() => {
+    const userLogged = JSON.parse(localStorage.getItem("userLogged"));
+
+    if(userLogged) {
+      // usuário já logado, não precisa abrir login
+      const modal = document.querySelector(".modal-login");
+      if(modal) modal.close();
+    }
+  }, []);
 
   useEffect(() => {
     const modal = document.querySelector("dialog .buttonClose");
@@ -189,12 +222,16 @@ export function Login() {
     const loginInputs = document.querySelectorAll(".loginInput");
 
     if(registerInputs.length > 0) {
-      document.querySelector(".name input").value = name;
+      const nameInput = document.querySelector(".name input");
+      if(nameInput) nameInput.value = name;
     }
 
     if(registerInputs.length > 0 || loginInputs.length > 0) {
-      document.querySelector(".email input").value = email;
-      document.querySelector(".password input").value = password;
+      const emailInput = document.querySelector(".email input");
+      const passInput = document.querySelector(".password input");
+
+      if(emailInput) emailInput.value = email;
+      if(passInput) passInput.value = password;
     }
   }, [ account ]);
 
