@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useAuth } from "../../hooks/auth";
 import { createErrorMessage, removeErrorMessage, removeAlertMessage } from "../../scripts/messages-inputs.js";
 import { createNotification } from "../../scripts/notifications.js";
 
@@ -11,7 +10,6 @@ import { Button } from "../../components/Button";
 import { Container } from "./style";
 
 export function Login() {
-  const { SignUp, SignIn } = useAuth();
   const [ account, setAccount ] = useState(true);
   const [ name, setName ] = useState("");
   const [ email, setEmail ] = useState("");
@@ -19,6 +17,7 @@ export function Login() {
 
   const navigate = useNavigate();
 
+  // CADASTRO
   async function handleSignUp() {
     if(!name) {
       const nameInput = document.querySelectorAll(".registerInput")[0];
@@ -37,17 +36,35 @@ export function Login() {
 
     if(name != "" && email != "" && password != "") {
       try {
-        await SignUp({ name, email, password });
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
+        const userExists = users.find(user => user.email === email);
+
+        if(userExists) {
+          createNotification("Email já cadastrado");
+          return;
+        }
+
+        const newUser = {
+          name,
+          email,
+          password,
+          orders: []
+        };
+
+        users.push(newUser);
+        localStorage.setItem("users", JSON.stringify(users));
+
         createNotification("Usuário cadastrado com sucesso :)");
+        setAccount(true);
 
       } catch(error) {
-        if(error) {
-          createNotification(error.response.data.message);
-        }
+        createNotification("Erro ao cadastrar usuário");
       }
     }
   }
 
+  // LOGIN
   async function handleSignIn() {
     if(!email) {
       const emailInput = document.querySelectorAll(".loginInput")[0];
@@ -61,7 +78,20 @@ export function Login() {
 
     if(email != "" && password != "") {
       try {
-        await SignIn({ email, password });
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
+        const user = users.find(
+          user => user.email === email && user.password === password
+        );
+
+        if(!user) {
+          createNotification("Email ou senha incorretos");
+          return;
+        }
+
+        localStorage.setItem("userLogged", JSON.stringify(user));
+
+        createNotification("Login realizado :)");
 
         if(window.innerWidth >= 1000) {
           document.querySelector(".modal-login").close();
@@ -72,9 +102,7 @@ export function Login() {
         }
 
       } catch(error) {
-        if(error) {
-          createNotification(error.response.data.message);
-        }
+        createNotification("Erro ao fazer login");
       }
     }
   }
@@ -114,7 +142,6 @@ export function Login() {
   }
 
   useEffect(() => {
-    //redirecionar para a parte de sign-in após fechar o modal;
     const modal = document.querySelector("dialog .buttonClose");
     if(modal) {
       modal.addEventListener("click", () => {
@@ -122,7 +149,6 @@ export function Login() {
         resetInputs();
       });
     }
-
   }, []);
 
   useEffect(() => {
@@ -130,7 +156,6 @@ export function Login() {
     if(nameInput) {
       removeErrorMessage(nameInput);
     }
-
   }, [ name ]); 
 
   useEffect(() => {
@@ -144,7 +169,6 @@ export function Login() {
     if(emailInputLogin) {
       removeErrorMessage(emailInputLogin);
     }
-
   }, [ email ]);
 
   useEffect(() => {
@@ -158,7 +182,6 @@ export function Login() {
     if(passwordInputLogin) {
       removeErrorMessage(passwordInputLogin);
     }
-
   }, [ password ]);
 
   useEffect(() => {
@@ -173,7 +196,6 @@ export function Login() {
       document.querySelector(".email input").value = email;
       document.querySelector(".password input").value = password;
     }
-
   }, [ account ]);
 
   useEffect(() => {
