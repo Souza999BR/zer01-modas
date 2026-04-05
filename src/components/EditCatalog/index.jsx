@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { createErrorMessage, removeErrorMessage } from "../../scripts/messages-inputs";
+import { createErrorMessage } from "../../scripts/messages-inputs";
 import { createNotification, createConfirmationMessage } from "../../scripts/notifications";
 import { useProducts } from "../../hooks/products";
 import { useProductAttributes } from "../../hooks/productAttributes";
@@ -25,8 +25,35 @@ export function EditCatalog({ ...rest }) {
   const [ promotion, setPromotion ] = useState("");
   const [ description, setDescription ] = useState("");
 
+  // LOGIN ADMIN
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authorized, setAuthorized] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const adminEmail = "babybarbara083@gmail.com";
+  const adminPassword = "anjonegro21";
+
   const path = useLocation().pathname;
   const navigate = useNavigate();
+
+  function handleLogin() {
+    if(email === adminEmail && password === adminPassword) {
+      localStorage.setItem("adminAuth", "true");
+      localStorage.setItem("adminEmail", email);
+      setAuthorized(true);
+      setIsAdmin(true);
+    } else {
+      alert("Email ou senha incorretos");
+    }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("adminAuth");
+    localStorage.removeItem("adminEmail");
+    setAuthorized(false);
+    setIsAdmin(false);
+  }
 
   async function handleNewProduct() {
     verifyValues();
@@ -63,8 +90,8 @@ export function EditCatalog({ ...rest }) {
     const buttonConfirm = createConfirmationMessage("Tem certeza que deseja excluir?");
 
     buttonConfirm.addEventListener("click", async() => {
-      await deleteAllImgs(product_id);
-      await deleteProducts([product_id]);
+      await deleteAllImgs(lastViewedProduct.id);
+      await deleteProducts([lastViewedProduct.id]);
       document.querySelector(".confirmationModal").remove();
       createNotification("Produto removido ;)");
       navigate(-2);
@@ -111,38 +138,21 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
+  // manter login
   useEffect(() => {
-    const inputName = document.querySelector("#inputName");
-    const divMessage = document.querySelector("#inputName .divMessage");
+    const auth = localStorage.getItem("adminAuth");
+    const storedEmail = localStorage.getItem("adminEmail");
 
-    if(divMessage) {
-      removeErrorMessage(inputName);
+    if(auth === "true") {
+      setAuthorized(true);
     }
 
-  }, [ name ]);
-
-  useEffect(() => {
-    const inputPrice = document.querySelector("#inputPrice");
-    const divMessage = document.querySelector("#inputPrice .divMessage");
-
-    if(divMessage) {
-      removeErrorMessage(inputPrice);
+    if(storedEmail === adminEmail) {
+      setIsAdmin(true);
     }
-
-  }, [ price ]);
-
-  useEffect(() => {
-    const inputDescription = document.querySelector(".textarea");
-    const divMessage = document.querySelector(".textarea .divMessage");
-
-    if(divMessage) {
-      removeErrorMessage(inputDescription);
-    }
-
-  }, [ description ]);
+  }, []);
 
   useEffect(() => {
-    //definir os valores da page de Edicao;
     if(path == "/edit_product") {
       document.querySelector("#inputName input").value = lastViewedProduct.name;
       document.querySelector("#textarea").value = lastViewedProduct.description;
@@ -159,16 +169,41 @@ export function EditCatalog({ ...rest }) {
         setPromotion(lastViewedProduct.promotion.percentage);
       }
     }
-
   }, []);
+
+  // BLOQUEIO LOGIN
+  if(!authorized) {
+    return (
+      <Container>
+        <h2>Login Admin</h2>
+
+        <Input 
+          title="Email"
+          placeholder="Digite o email"
+          onChange={e => setEmail(e.target.value)}
+        />
+
+        <Input 
+          title="Senha"
+          placeholder="Digite a senha"
+          type="password"
+          onChange={e => setPassword(e.target.value)}
+        />
+
+        <Button title="Entrar" onClick={handleLogin} />
+      </Container>
+    );
+  }
 
   return (
     <Container {...rest}>
+      {isAdmin && <Button title="Logout" onClick={handleLogout} />}
+
       <Input id="inputName" title="Nome" placeholder="Nome do produto" onChange={e => setName(e.target.value)} />
 
       <label className="label_select" id="categoryLabel" htmlFor="categoria">
         Categoria:
-        <select name="categoria" id="" defaultValue="FEMININO" onChange={e => setCategory(e.target.value)}>
+        <select name="categoria" defaultValue="FEMININO" onChange={e => setCategory(e.target.value)}>
           <option value="FEMININO">Feminino</option>
           <option value="MASCULINO">Masculino</option>
           <option value="INFANTIL">Infantil</option>
@@ -179,7 +214,6 @@ export function EditCatalog({ ...rest }) {
       </label>
 
       <Input id="inputPrice" title="Preço" span="R$" placeholder="00,00" onChange={e => setPrice(e.target.value)} />
-
       <Input id="inputPromotion" title="Promoçao" span="%" placeholder="00" onChange={e => setPromotion(e.target.value)} />
 
       <div className="colors">
@@ -205,17 +239,19 @@ export function EditCatalog({ ...rest }) {
 
       <label className="textarea" htmlFor="textarea">
         Descrição
-        <textarea name="" id="textarea" cols="30" rows="10" placeholder="Breve descrição sobre o produto" onChange={e => setDescription(e.target.value)}></textarea>
+        <textarea id="textarea" cols="30" rows="10" placeholder="Breve descrição sobre o produto" onChange={e => setDescription(e.target.value)}></textarea>
       </label>
 
       {
-        path == "/new" ?
-        <Button title="SALVAR" onClick={ handleNewProduct } />
-        :
-        <div className="buttons">
-          <Button title="SALVAR" onClick={ handleEditProduct } />
-          <Button title="EXCLUIR" onClick={ handleDeleteProduct } />
-        </div>
+        isAdmin && (
+          path == "/new" ?
+          <Button title="SALVAR" onClick={ handleNewProduct } />
+          :
+          <div className="buttons">
+            <Button title="SALVAR" onClick={ handleEditProduct } />
+            <Button title="EXCLUIR" onClick={ handleDeleteProduct } />
+          </div>
+        )
       }
 
     </Container>
