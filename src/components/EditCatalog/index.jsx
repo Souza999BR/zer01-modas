@@ -26,36 +26,37 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   // LOGIN ADMIN
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [authorized, setAuthorized] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const adminEmail = "babybarbara083@gmail.com";
-  const adminPassword = "anjonegro21";
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  function handleLogin() {
-    if(email === adminEmail && password === adminPassword) {
-      localStorage.setItem("adminAuth", "true");
-      localStorage.setItem("adminEmail", email);
+  // VERIFICAR LOGIN
+  function checkAdmin() {
+    const user = JSON.parse(localStorage.getItem("userLogged"));
+
+    if(!user) {
+      createNotification("Faça login primeiro");
+      navigate("/login");
+      return false;
+    }
+
+    if(user.email === adminEmail && user.admin === true) {
       setAuthorized(true);
       setIsAdmin(true);
+      return true;
     } else {
-      alert("Email ou senha incorretos");
+      createNotification("Apenas administrador pode editar");
+      return false;
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem("adminAuth");
-    localStorage.removeItem("adminEmail");
-    setAuthorized(false);
-    setIsAdmin(false);
-  }
-
   async function handleNewProduct() {
+    if(!checkAdmin()) return;
+
     verifyValues();
 
     if(name != "" && price != "" && description != "") {
@@ -74,19 +75,23 @@ export function EditCatalog({ ...rest }) {
   }
 
   async function handleEditProduct() {
+    if(!checkAdmin()) return;
+
     try {
       await updateProduct({ id: lastViewedProduct.id, name, category, price, promotion, description });
       await updateColors(lastViewedProduct);
       await updateTags(lastViewedProduct.id);
 
+      createNotification("Produto atualizado com sucesso :)");
+
     } catch(error) {
       console.log(error);
     }
-
-    createNotification("Produto atualizado com sucesso :)");
   }
 
   function handleDeleteProduct() {
+    if(!checkAdmin()) return;
+
     const buttonConfirm = createConfirmationMessage("Tem certeza que deseja excluir?");
 
     buttonConfirm.addEventListener("click", async() => {
@@ -138,22 +143,18 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
-  // manter login
+  // VERIFICAR SE JÁ ESTÁ LOGADO
   useEffect(() => {
-    const auth = localStorage.getItem("adminAuth");
-    const storedEmail = localStorage.getItem("adminEmail");
+    const user = JSON.parse(localStorage.getItem("userLogged"));
 
-    if(auth === "true") {
+    if(user && user.email === adminEmail && user.admin === true) {
       setAuthorized(true);
-    }
-
-    if(storedEmail === adminEmail) {
       setIsAdmin(true);
     }
   }, []);
 
   useEffect(() => {
-    if(path == "/edit_product") {
+    if(path == "/edit_product" && lastViewedProduct) {
       document.querySelector("#inputName input").value = lastViewedProduct.name;
       document.querySelector("#textarea").value = lastViewedProduct.description;
       document.querySelector("#categoryLabel select").value = lastViewedProduct.category;
@@ -169,35 +170,17 @@ export function EditCatalog({ ...rest }) {
         setPromotion(lastViewedProduct.promotion.percentage);
       }
     }
-  }, []);
-
-  // BLOQUEIO LOGIN
-  if(!authorized) {
-    return (
-      <Container>
-        <h2>Login Admin</h2>
-
-        <Input 
-          title="Email"
-          placeholder="Digite o email"
-          onChange={e => setEmail(e.target.value)}
-        />
-
-        <Input 
-          title="Senha"
-          placeholder="Digite a senha"
-          type="password"
-          onChange={e => setPassword(e.target.value)}
-        />
-
-        <Button title="Entrar" onClick={handleLogin} />
-      </Container>
-    );
-  }
+  }, [lastViewedProduct]);
 
   return (
     <Container {...rest}>
-      {isAdmin && <Button title="Logout" onClick={handleLogout} />}
+
+      {isAdmin && <Button title="Logout" onClick={() => {
+        localStorage.removeItem("userLogged");
+        setAuthorized(false);
+        setIsAdmin(false);
+        createNotification("Logout realizado");
+      }} />}
 
       <Input id="inputName" title="Nome" placeholder="Nome do produto" onChange={e => setName(e.target.value)} />
 
