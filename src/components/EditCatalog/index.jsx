@@ -26,43 +26,33 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [clickLogo, setClickLogo] = useState(0);
 
-  const adminPassword = "anjonegro21";
+  const adminPassword = "123456"; // senha modo admin
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  // 🔐 Verificar admin salvo
-  useEffect(() => {
-    const adminSaved = localStorage.getItem("admin");
-    if(adminSaved === "true") {
+  // 🔐 ATIVAR MODO ADMIN
+  function activateAdmin() {
+    const senha = prompt("Digite a senha do administrador:");
+
+    if(senha === adminPassword) {
+      localStorage.setItem("isAdmin", "true");
       setIsAdmin(true);
-    }
-  }, []);
-
-  // 🔥 Clique no logo 5 vezes
-  function handleLogoClick() {
-    const newClicks = clickLogo + 1;
-    setClickLogo(newClicks);
-
-    if(newClicks >= 5) {
-      const password = prompt("Digite a senha de administrador:");
-      if(password === adminPassword) {
-        localStorage.setItem("admin", "true");
-        setIsAdmin(true);
-        createNotification("Modo administrador ativado");
-      } else {
-        createNotification("Senha incorreta");
-      }
-      setClickLogo(0);
+      createNotification("Modo administrador ativado");
+    } else {
+      createNotification("Senha incorreta");
     }
   }
 
   // 🔐 VERIFICAR ADMIN
   function checkAdmin() {
-    const adminSaved = localStorage.getItem("admin");
-    if(adminSaved === "true") return true;
+    const admin = localStorage.getItem("isAdmin");
+
+    if(admin === "true") {
+      setIsAdmin(true);
+      return true;
+    }
 
     createNotification("Apenas administrador pode editar");
     return false;
@@ -148,19 +138,50 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
+  // 🔥 DETECTAR ADMIN AO ABRIR
+  useEffect(() => {
+    const admin = localStorage.getItem("isAdmin");
+    if(admin === "true") {
+      setIsAdmin(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if(path == "/edit_product" && lastViewedProduct) {
+      document.querySelector("#inputName input").value = lastViewedProduct.name;
+      document.querySelector("#textarea").value = lastViewedProduct.description;
+      document.querySelector("#categoryLabel select").value = lastViewedProduct.category;
+      document.querySelector("#inputPrice input").value = (lastViewedProduct.price).replace(/[^0-9,]/g, "");
+
+      setName(lastViewedProduct.name);
+      setDescription(lastViewedProduct.description);
+      setCategory(lastViewedProduct.category);
+      setPrice((lastViewedProduct.price).replace(/[^0-9,]/g, ""));
+
+      if(lastViewedProduct.promotion) {
+        document.querySelector("#inputPromotion input").value = lastViewedProduct.promotion.percentage;
+        setPromotion(lastViewedProduct.promotion.percentage);
+      }
+    }
+  }, [lastViewedProduct]);
+
   return (
     <Container {...rest}>
 
-      {/* LOGO CLICÁVEL */}
-      <h2 onClick={handleLogoClick} style={{cursor:"pointer"}}>
-        Baby Modas
-      </h2>
+      {/* BOTÃO ATIVAR ADMIN */}
+      {!isAdmin && (
+        <Button 
+          title="Modo Administrador" 
+          onClick={activateAdmin}
+        />
+      )}
 
+      {/* LOGOUT ADMIN */}
       {isAdmin && (
         <Button 
           title="Logout Admin" 
           onClick={() => {
-            localStorage.removeItem("admin");
+            localStorage.removeItem("isAdmin");
             setIsAdmin(false);
             createNotification("Admin desativado");
           }} 

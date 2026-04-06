@@ -18,7 +18,7 @@ export function Login() {
   const navigate = useNavigate();
 
   const adminEmail = "babybarbara083@gmail.com";
-  const adminPassword = "anjonegro21";
+  const adminPassword = "anjo@91";
 
   // CADASTRO
   async function handleSignUp() {
