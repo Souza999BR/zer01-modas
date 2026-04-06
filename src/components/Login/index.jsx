@@ -17,17 +17,8 @@ export function Login() {
 
   const navigate = useNavigate();
 
-  // 🔐 EMAIL E SENHA ADMIN CRIPTOGRAFADOS
-  const adminEmailEncrypted = "YmFieWJhcmJhcmEwODNAZ21haWwuY29t";
-  const adminPasswordEncrypted = "YW5qb25lZ3JvMjE=";
-
-  function encrypt(text) {
-    return btoa(text);
-  }
-
-  function decrypt(text) {
-    return atob(text);
-  }
+  const adminEmail = "babybarbara083@gmail.com";
+  const adminPassword = "anjonegro21";
 
   // CADASTRO
   async function handleSignUp() {
@@ -62,7 +53,7 @@ export function Login() {
           email,
           password,
           orders: [],
-          admin: encrypt(email) === adminEmailEncrypted
+          admin: email === adminEmail // se cadastrar com email admin vira admin
         };
 
         users.push(newUser);
@@ -95,16 +86,14 @@ export function Login() {
 
         const users = JSON.parse(localStorage.getItem("users")) || [];
 
-        // 🔐 LOGIN ADMIN CRIPTOGRAFADO
-        if(encrypt(email) === adminEmailEncrypted && encrypt(password) === adminPasswordEncrypted) {
+        // LOGIN ADMIN
+        if(email === adminEmail && password === adminPassword) {
           user = {
             name: "Administrador",
-            email: decrypt(adminEmailEncrypted),
+            email: adminEmail,
             admin: true,
             orders: []
           };
-
-          localStorage.setItem("isAdmin", "true");
         } else {
           user = users.find(
             user => user.email === email && user.password === password
@@ -115,9 +104,9 @@ export function Login() {
             return;
           }
 
-          if(encrypt(user.email) === adminEmailEncrypted) {
+          // garantir que admin continue admin
+          if(user.email === adminEmail) {
             user.admin = true;
-            localStorage.setItem("isAdmin", "true");
           } else {
             user.admin = false;
           }
@@ -280,7 +269,7 @@ export function Login() {
             <div className="boxInput">
               <Input className="registerInput name" title="Nome" onChange={e => setName(e.target.value)} />
               <Input className="registerInput email" title="E-mail" onChange={e => setEmail(e.target.value)} />
-              <Input className="registerInput password" title="Senha" onChange={e => setPassword(e.target.value)} />
+              <Input className="registerInput password" title="Senha" type="password" onChange={e => setPassword(e.target.value)} />
             </div>
 
             <Button title="CADASTRAR" onClick={ handleSignUp } />
