@@ -26,67 +26,43 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showAdminButton, setShowAdminButton] = useState(false);
-  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [clickLogo, setClickLogo] = useState(0);
 
-  const adminEmailEncrypted = "YmFieWJhcmJhcmEwODNAZ21haWwuY29t"; // email criptografado
-  const adminPasswordEncrypted = "YW5qb25lZ3JvMjE="; // senha criptografada
+  const adminPassword = "anjonegro21";
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  function encrypt(text) {
-    return btoa(text);
-  }
-
-  function decrypt(text) {
-    return atob(text);
-  }
-
-  // CLICAR 5 VEZES NO LOGO
+  // 🔐 Verificar admin salvo
   useEffect(() => {
-    let clicks = 0;
-    const logo = document.querySelector(".logo");
-
-    if(logo) {
-      logo.addEventListener("click", () => {
-        clicks++;
-        if(clicks >= 5) {
-          setShowAdminButton(true);
-          createNotification("Modo administrador");
-        }
-      });
+    const adminSaved = localStorage.getItem("admin");
+    if(adminSaved === "true") {
+      setIsAdmin(true);
     }
   }, []);
 
-  // SALVAR ADMIN
-  function saveAdmin() {
-    if(encrypt(adminPasswordInput) === adminPasswordEncrypted) {
-      const adminUser = {
-        email: decrypt(adminEmailEncrypted),
-        admin: true
-      };
+  // 🔥 Clique no logo 5 vezes
+  function handleLogoClick() {
+    const newClicks = clickLogo + 1;
+    setClickLogo(newClicks);
 
-      localStorage.setItem("userLogged", JSON.stringify(adminUser));
-      localStorage.setItem("isAdmin", "true");
-
-      setIsAdmin(true);
-      setShowAdminButton(false);
-
-      createNotification("Administrador ativado");
-    } else {
-      createNotification("Senha admin incorreta");
+    if(newClicks >= 5) {
+      const password = prompt("Digite a senha de administrador:");
+      if(password === adminPassword) {
+        localStorage.setItem("admin", "true");
+        setIsAdmin(true);
+        createNotification("Modo administrador ativado");
+      } else {
+        createNotification("Senha incorreta");
+      }
+      setClickLogo(0);
     }
   }
 
   // 🔐 VERIFICAR ADMIN
   function checkAdmin() {
-    const adminStorage = localStorage.getItem("isAdmin");
-
-    if(adminStorage === "true") {
-      setIsAdmin(true);
-      return true;
-    }
+    const adminSaved = localStorage.getItem("admin");
+    if(adminSaved === "true") return true;
 
     createNotification("Apenas administrador pode editar");
     return false;
@@ -172,38 +148,21 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
-  // DETECTAR ADMIN SALVO
-  useEffect(() => {
-    const adminStorage = localStorage.getItem("isAdmin");
-    if(adminStorage === "true") {
-      setIsAdmin(true);
-    }
-  }, []);
-
   return (
     <Container {...rest}>
 
-      {/* BOTÃO ADMIN OCULTO */}
-      {showAdminButton && !isAdmin && (
-        <>
-          <Input 
-            title="Senha Administrador" 
-            type="password"
-            onChange={e => setAdminPasswordInput(e.target.value)}
-          />
-          <Button title="SALVAR ADMIN" onClick={saveAdmin} />
-        </>
-      )}
+      {/* LOGO CLICÁVEL */}
+      <h2 onClick={handleLogoClick} style={{cursor:"pointer"}}>
+        Baby Modas
+      </h2>
 
-      {/* LOGOUT ADMIN */}
       {isAdmin && (
         <Button 
           title="Logout Admin" 
           onClick={() => {
-            localStorage.removeItem("isAdmin");
-            localStorage.removeItem("userLogged");
+            localStorage.removeItem("admin");
             setIsAdmin(false);
-            createNotification("Logout realizado");
+            createNotification("Admin desativado");
           }} 
         />
       )}
