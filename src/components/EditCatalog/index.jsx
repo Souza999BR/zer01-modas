@@ -26,23 +26,64 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminButton, setShowAdminButton] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
 
-  const adminEmail = "babybarbara083@gmail.com";
+  const adminEmailEncrypted = "YmFieWJhcmJhcmEwODNAZ21haWwuY29t"; // email criptografado
+  const adminPasswordEncrypted = "YW5qb25lZ3JvMjE="; // senha criptografada
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
+  function encrypt(text) {
+    return btoa(text);
+  }
+
+  function decrypt(text) {
+    return atob(text);
+  }
+
+  // CLICAR 5 VEZES NO LOGO
+  useEffect(() => {
+    let clicks = 0;
+    const logo = document.querySelector(".logo");
+
+    if(logo) {
+      logo.addEventListener("click", () => {
+        clicks++;
+        if(clicks >= 5) {
+          setShowAdminButton(true);
+          createNotification("Modo administrador");
+        }
+      });
+    }
+  }, []);
+
+  // SALVAR ADMIN
+  function saveAdmin() {
+    if(encrypt(adminPasswordInput) === adminPasswordEncrypted) {
+      const adminUser = {
+        email: decrypt(adminEmailEncrypted),
+        admin: true
+      };
+
+      localStorage.setItem("userLogged", JSON.stringify(adminUser));
+      localStorage.setItem("isAdmin", "true");
+
+      setIsAdmin(true);
+      setShowAdminButton(false);
+
+      createNotification("Administrador ativado");
+    } else {
+      createNotification("Senha admin incorreta");
+    }
+  }
+
   // 🔐 VERIFICAR ADMIN
   function checkAdmin() {
-    const user = JSON.parse(localStorage.getItem("userLogged"));
+    const adminStorage = localStorage.getItem("isAdmin");
 
-    if(!user) {
-      createNotification("Faça login primeiro");
-      navigate("/login");
-      return false;
-    }
-
-    if(user.email === adminEmail) {
+    if(adminStorage === "true") {
       setIsAdmin(true);
       return true;
     }
@@ -131,41 +172,35 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
-  // 🔥 DETECTAR ADMIN AO ABRIR
+  // DETECTAR ADMIN SALVO
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("userLogged"));
-
-    if(user && user.email === adminEmail) {
+    const adminStorage = localStorage.getItem("isAdmin");
+    if(adminStorage === "true") {
       setIsAdmin(true);
     }
   }, []);
 
-  useEffect(() => {
-    if(path == "/edit_product" && lastViewedProduct) {
-      document.querySelector("#inputName input").value = lastViewedProduct.name;
-      document.querySelector("#textarea").value = lastViewedProduct.description;
-      document.querySelector("#categoryLabel select").value = lastViewedProduct.category;
-      document.querySelector("#inputPrice input").value = (lastViewedProduct.price).replace(/[^0-9,]/g, "");
-
-      setName(lastViewedProduct.name);
-      setDescription(lastViewedProduct.description);
-      setCategory(lastViewedProduct.category);
-      setPrice((lastViewedProduct.price).replace(/[^0-9,]/g, ""));
-
-      if(lastViewedProduct.promotion) {
-        document.querySelector("#inputPromotion input").value = lastViewedProduct.promotion.percentage;
-        setPromotion(lastViewedProduct.promotion.percentage);
-      }
-    }
-  }, [lastViewedProduct]);
-
   return (
     <Container {...rest}>
 
+      {/* BOTÃO ADMIN OCULTO */}
+      {showAdminButton && !isAdmin && (
+        <>
+          <Input 
+            title="Senha Administrador" 
+            type="password"
+            onChange={e => setAdminPasswordInput(e.target.value)}
+          />
+          <Button title="SALVAR ADMIN" onClick={saveAdmin} />
+        </>
+      )}
+
+      {/* LOGOUT ADMIN */}
       {isAdmin && (
         <Button 
-          title="Logout" 
+          title="Logout Admin" 
           onClick={() => {
+            localStorage.removeItem("isAdmin");
             localStorage.removeItem("userLogged");
             setIsAdmin(false);
             createNotification("Logout realizado");
