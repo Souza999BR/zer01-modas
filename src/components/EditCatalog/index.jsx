@@ -26,13 +26,14 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [clickCount, setClickCount] = useState(0);
 
-  const adminPassword = "123456"; // senha modo admin
+  const adminPassword = "123456";
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  // 🔐 ATIVAR MODO ADMIN
+  // 🔐 ATIVAR ADMIN
   function activateAdmin() {
     const senha = prompt("Digite a senha do administrador:");
 
@@ -56,6 +57,21 @@ export function EditCatalog({ ...rest }) {
 
     createNotification("Apenas administrador pode editar");
     return false;
+  }
+
+  // 👆 CLICAR 6 VEZES NA LOGO
+  function handleLogoClick() {
+    const newCount = clickCount + 1;
+    setClickCount(newCount);
+
+    if(newCount >= 6) {
+      activateAdmin();
+      setClickCount(0);
+    }
+
+    setTimeout(() => {
+      setClickCount(0);
+    }, 3000);
   }
 
   async function handleNewProduct() {
@@ -146,6 +162,27 @@ export function EditCatalog({ ...rest }) {
     }
   }, []);
 
+  // 🔥 ADICIONAR EVENTO NA LOGO
+  useEffect(() => {
+    const logo = document.querySelector(".logo");
+
+    if(logo) {
+      logo.addEventListener("click", handleLogoClick);
+    }
+
+    return () => {
+      if(logo) logo.removeEventListener("click", handleLogoClick);
+    };
+  });
+
+  // ❌ REMOVER AUTOCOMPLETE (email aparecendo)
+  useEffect(() => {
+    const inputs = document.querySelectorAll("input");
+    inputs.forEach(input => {
+      input.setAttribute("autocomplete", "off");
+    });
+  }, []);
+
   useEffect(() => {
     if(path == "/edit_product" && lastViewedProduct) {
       document.querySelector("#inputName input").value = lastViewedProduct.name;
@@ -167,14 +204,6 @@ export function EditCatalog({ ...rest }) {
 
   return (
     <Container {...rest}>
-
-      {/* BOTÃO ATIVAR ADMIN */}
-      {!isAdmin && (
-        <Button 
-          title="Modo Administrador" 
-          onClick={activateAdmin}
-        />
-      )}
 
       {/* LOGOUT ADMIN */}
       {isAdmin && (
