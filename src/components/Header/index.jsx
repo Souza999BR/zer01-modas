@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios"; 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -28,14 +28,23 @@ import { Container } from "./style";
 
 export function Header() {
   const { openMenuDesktop, closenMenuDesktop } = useMenu();
-  const { userData, isAdmin } = useAuth();
+  const { userData } = useAuth();
   const { searchProducts, findAllFavorites, favorites, allProducts, setAllProducts, loadingProducts } = useProducts();
   const { cartBuy, findAllProductsShoppingCart } = useShopping();
 
   const [ search, setSearch ] = useState("");
+  const [ isAdminLocal, setIsAdminLocal ] = useState(false); // 🔥 NOVO
 
   const navigate = useNavigate();
   const route = useLocation();
+
+  // 🔥 VERIFICAR ADMIN PELO LOCALSTORAGE
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("userLogged"));
+    if(user && user.admin === true) {
+      setIsAdminLocal(true);
+    }
+  }, []);
 
   function handleOpenMenuMOBILE() {
     document.querySelector(".menuMobile").style.display = "block";
@@ -68,7 +77,6 @@ export function Header() {
     if(route.pathname != "/shopping-cart") {
       navigate("/shopping-cart");
     }
-
   }
 
   function navigateFavorites() {
@@ -96,27 +104,20 @@ export function Header() {
     document.addEventListener("keydown", event => fetchDataDesktop(event.key));
   }
 
+  // 🔍 BUSCA
   useEffect(() => {
     const source = axios.CancelToken.source();
     const boxResponseSearch = document.querySelector(".responseSearch");
     const inputSearchDesktop = document.querySelector(".inputSearchDesktop input");
 
     (async() => {
-      // pesquisar produtos;
       const id = Number(search);
       await searchProducts({ name: search, id, cancelToken: source.token });
     })();
     
-    // adicionar imagem de erro caso se n encontrar produtos da pesquisa;
-    if(window.innerWidth < 1000) { //mobile;
-      if(search == "") {
-        boxResponseSearch.style.display = "none";
-      } else {
-        boxResponseSearch.style.display = "flex";
-      }
-
+    if(window.innerWidth < 1000) {
+      boxResponseSearch.style.display = search == "" ? "none" : "flex";
     } else {
-      //desktop;
       inputSearchDesktop.addEventListener('focus', focusInputDesktop);
     }
 
@@ -133,13 +134,11 @@ export function Header() {
         await findAllFavorites();
         await findAllProductsShoppingCart();
       }
-      
     })();
-
   }, [ userData ]);
 
   return (
-    <Container $pathname={ route.pathname } $isAdmin={ isAdmin }>
+    <Container $pathname={ route.pathname } $isAdmin={ isAdminLocal }>
 
       <div>
         <p> Sua moda é feita aqui ;) </p>
@@ -152,45 +151,6 @@ export function Header() {
 
       <div>
         <Button icon={ <HiOutlineViewList /> } className="buttonMenu" onClick={ handleOpenMenuMOBILE } />
-        <div className="menuMobile">
-          <div>
-            <InputBox className="input inputSearch" placeholder="O que vai querer hoje?" icon={ iconSearch } onChange={e => setSearch(e.target.value) } />
-            <div className="responseSearch">
-              { 
-                loadingProducts &&
-                <div style={{ 
-                  cursor: "progress", 
-                  display: "flex", 
-                  flexWrap: "wrap", 
-                  gap: "2rem", 
-                  padding: "2rem" }}>
-                {
-                  Array.from({ length: 10 }, (_, index) => (
-                    <div key={ index } className="divLoading" style={{ width: "10rem", height: "11rem" }}></div>
-                  ))
-                }
-                </div>
-              }
-              {
-                !loadingProducts && allProducts.length > 0 ?
-                <div className="div_products">
-                  {
-                    allProducts.map((product, index) => (
-                      <ShowOutfit key={ index } image={ `${ api.defaults.baseURL }/files/${ product.img }` } title={ product.name } price={ product.price } onClick={() => handleNavigateOutfit(product.name) } />
-                    ))
-                  }
-                </div>
-                : !loadingProducts &&
-                <div>
-                  <img src={ img_produto_nao_encontrado_mobile } alt="" />
-                </div>
-              }
-              
-            </div>
-          </div>
-          <NavMenu />
-          <Button onClick={ handleCloseMenuMOBILE } />
-        </div>
 
         <img src={ Logo } alt="Logomarca" />
 
@@ -204,36 +164,49 @@ export function Header() {
             }
             <FaChevronDown size={ 20 } />
           </button>
+
           <NavMenu onMouseOver={ handleOpenMenuDESKTOP } onMouseOut={ handleCloseMenuDESKTOP }  />
 
+          {/* 🔥 BOTÃO ADMIN AUTOMÁTICO */}
           {
-            !isAdmin &&
+            isAdminLocal && (
+              <Button 
+                title="Editar Promoções" 
+                onClick={() => navigate("/edit")} 
+              />
+            )
+          }
+
+          {
+            !isAdminLocal &&
           <button className="buttonFavorites">
             <FiHeart size={ 25 } onClick={ navigateFavorites } />
             <span> { favorites.length } </span>
           </button>
           }
+
           {
-            !isAdmin &&
+            !isAdminLocal &&
           <button>
             <RiShoppingBag2Line size={ 25 } onClick={ navigateShopping } />
             <span> { cartBuy.products.length } </span>
           </button>
           }
+
         </div>
 
         <InputBox className="input inputSearchDesktop" placeholder="O que vai querer hoje?" icon={ iconSearch } onChange={e => setSearch(e.target.value) } />
 
         <dialog className="modal-login">
-        <div>
           <div>
-            <Button className="buttonClose" icon={ <TfiClose size={ 20 } /> } onClick={ handleCloseModalLogin } />
-            <Login />
+            <div>
+              <Button className="buttonClose" icon={ <TfiClose size={ 20 } /> } onClick={ handleCloseModalLogin } />
+              <Login />
+            </div>
           </div>
-        </div>
-      </dialog>
-      </div>
+        </dialog>
 
+      </div>
     </Container>
   )
 }

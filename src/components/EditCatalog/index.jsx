@@ -27,13 +27,13 @@ export function EditCatalog({ ...rest }) {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // 🔐 SENHA ADMIN (apenas você sabe)
+  // 🔐 SENHA ADMIN
   const adminPassword = "anjonegro21";
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  // 🔐 VERIFICA OU PEDE SENHA
+  // 🔐 VERIFICA OU PEDE SENHA (SÓ QUANDO PRECISA)
   function checkAdmin() {
     const admin = localStorage.getItem("adminAccess");
 
@@ -47,7 +47,7 @@ export function EditCatalog({ ...rest }) {
     if(password === adminPassword) {
       localStorage.setItem("adminAccess", "true");
       setIsAdmin(true);
-      createNotification("Acesso liberado como administrador");
+      createNotification("Modo administrador ativado");
       return true;
     } else {
       createNotification("Senha incorreta");
@@ -60,7 +60,7 @@ export function EditCatalog({ ...rest }) {
 
     verifyValues();
 
-    if(name != "" && price != "" && description != "") {
+    if(name !== "" && price !== "" && description !== "") {
       try {
         const product_id = await createProduct({ name, category, price, promotion, description });
         await AddAttributes(product_id);
@@ -70,13 +70,18 @@ export function EditCatalog({ ...rest }) {
         clearPage();
 
       } catch(error) {
-        alert(error);
+        console.log(error);
       }
     }
   }
 
   async function handleEditProduct() {
     if(!checkAdmin()) return;
+
+    if(!lastViewedProduct) {
+      createNotification("Nenhum produto selecionado");
+      return;
+    }
 
     try {
       await updateProduct({ id: lastViewedProduct.id, name, category, price, promotion, description });
@@ -92,6 +97,11 @@ export function EditCatalog({ ...rest }) {
 
   function handleDeleteProduct() {
     if(!checkAdmin()) return;
+
+    if(!lastViewedProduct) {
+      createNotification("Nenhum produto selecionado");
+      return;
+    }
 
     const buttonConfirm = createConfirmationMessage("Tem certeza que deseja excluir?");
 
@@ -111,12 +121,12 @@ export function EditCatalog({ ...rest }) {
     const formDivs = [ divName, divPrice ];
 
     for(let div of formDivs) {
-      if(div.querySelector("input").value == "") {
+      if(div && div.querySelector("input").value === "") {
         createErrorMessage(div);
       }
     }
     
-    if(divDescription.querySelector("textarea").value == "") {
+    if(divDescription && divDescription.querySelector("textarea").value === "") {
       createErrorMessage(divDescription);
     }
   }
@@ -130,8 +140,8 @@ export function EditCatalog({ ...rest }) {
       input.value = "";
     });
 
-    select.value = "FEMININO";
-    textarea.value = "";
+    if(select) select.value = "FEMININO";
+    if(textarea) textarea.value = "";
 
     setName("");
     setCategory("FEMININO");
@@ -152,20 +162,27 @@ export function EditCatalog({ ...rest }) {
     }
   }, []);
 
+  // 🔄 carregar produto sem quebrar
   useEffect(() => {
-    if(path == "/edit_product" && lastViewedProduct) {
-      document.querySelector("#inputName input").value = lastViewedProduct.name;
-      document.querySelector("#textarea").value = lastViewedProduct.description;
-      document.querySelector("#categoryLabel select").value = lastViewedProduct.category;
-      document.querySelector("#inputPrice input").value = (lastViewedProduct.price).replace(/[^0-9,]/g, "");
+    if(path === "/edit_product" && lastViewedProduct) {
+      const nameInput = document.querySelector("#inputName input");
+      const textarea = document.querySelector("#textarea");
+      const categorySelect = document.querySelector("#categoryLabel select");
+      const priceInput = document.querySelector("#inputPrice input");
+      const promoInput = document.querySelector("#inputPromotion input");
+
+      if(nameInput) nameInput.value = lastViewedProduct.name;
+      if(textarea) textarea.value = lastViewedProduct.description;
+      if(categorySelect) categorySelect.value = lastViewedProduct.category;
+      if(priceInput) priceInput.value = (lastViewedProduct.price).replace(/[^0-9,]/g, "");
 
       setName(lastViewedProduct.name);
       setDescription(lastViewedProduct.description);
       setCategory(lastViewedProduct.category);
       setPrice((lastViewedProduct.price).replace(/[^0-9,]/g, ""));
 
-      if(lastViewedProduct.promotion) {
-        document.querySelector("#inputPromotion input").value = lastViewedProduct.promotion.percentage;
+      if(lastViewedProduct.promotion && promoInput) {
+        promoInput.value = lastViewedProduct.promotion.percentage;
         setPromotion(lastViewedProduct.promotion.percentage);
       }
     }
@@ -174,6 +191,7 @@ export function EditCatalog({ ...rest }) {
   return (
     <Container {...rest}>
 
+      {/* BOTÃO ADMIN VISÍVEL SEMPRE */}
       {isAdmin && (
         <Button 
           title="Sair do Admin" 
@@ -228,8 +246,9 @@ export function EditCatalog({ ...rest }) {
         <textarea id="textarea" placeholder="Breve descrição sobre o produto" onChange={e => setDescription(e.target.value)}></textarea>
       </label>
 
+      {/* BOTÕES SEMPRE VISÍVEIS */}
       {
-        path == "/new" ?
+        path === "/new" ?
         <Button title="SALVAR" onClick={ handleNewProduct } />
         :
         <div className="buttons">

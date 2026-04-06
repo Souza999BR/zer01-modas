@@ -17,44 +17,25 @@ export function Login() {
 
   const navigate = useNavigate();
 
-  // 🔐 SENHA ADMIN (APENAS SENHA)
+  const adminEmail = "babybarbara083@gmail.com";
   const adminPassword = "anjonegro21";
 
   // ================= CADASTRO =================
   async function handleSignUp() {
-    if(!name) {
-      const nameInput = document.querySelectorAll(".registerInput")[0];
-      createErrorMessage(nameInput);
-    }
+    if(!name) createErrorMessage(document.querySelectorAll(".registerInput")[0]);
+    if(!email) createErrorMessage(document.querySelectorAll(".registerInput")[1]);
+    if(!password) createErrorMessage(document.querySelectorAll(".registerInput")[2]);
 
-    if(!email) {
-      const emailInput = document.querySelectorAll(".registerInput")[1];
-      createErrorMessage(emailInput);
-    }
-
-    if(!password) {
-      const passwordInput = document.querySelectorAll(".registerInput")[2];
-      createErrorMessage(passwordInput);
-    }
-
-    if(name != "" && email != "" && password != "") {
+    if(name && email && password) {
       try {
         const users = JSON.parse(localStorage.getItem("users")) || [];
 
-        const userExists = users.find(user => user.email === email);
-
-        if(userExists) {
+        if(users.find(user => user.email === email)) {
           createNotification("Email já cadastrado");
           return;
         }
 
-        const newUser = {
-          name,
-          email,
-          password,
-          orders: [],
-          admin: false
-        };
+        const newUser = { name, email, password, orders: [], admin: false };
 
         users.push(newUser);
         localStorage.setItem("users", JSON.stringify(users));
@@ -62,7 +43,7 @@ export function Login() {
         createNotification("Usuário cadastrado com sucesso :)");
         setAccount(true);
 
-      } catch(error) {
+      } catch {
         createNotification("Erro ao cadastrar usuário");
       }
     }
@@ -70,34 +51,24 @@ export function Login() {
 
   // ================= LOGIN =================
   async function handleSignIn() {
-    if(!password) {
-      const passwordInput = document.querySelectorAll(".loginInput")[1];
-      createErrorMessage(passwordInput);
-    }
+    if(!email) createErrorMessage(document.querySelectorAll(".loginInput")[0]);
+    if(!password) createErrorMessage(document.querySelectorAll(".loginInput")[1]);
 
-    if(account && !email && password !== adminPassword) {
-      const emailInput = document.querySelectorAll(".loginInput")[0];
-      createErrorMessage(emailInput);
-    }
-
-    if(password != "") {
+    if(email && password) {
       try {
         let user;
 
-        // 🔐 LOGIN ADMIN (APENAS SENHA)
-        if(password === adminPassword) {
+        // ADMIN
+        if(email === adminEmail && password === adminPassword) {
           user = {
             name: "Administrador",
-            email: "admin@baby",
+            email: adminEmail,
             admin: true
           };
-
         } else {
           const users = JSON.parse(localStorage.getItem("users")) || [];
 
-          user = users.find(
-            user => user.email === email && user.password === password
-          );
+          user = users.find(u => u.email === email && u.password === password);
 
           if(!user) {
             createNotification("Email ou senha incorretos");
@@ -107,52 +78,27 @@ export function Login() {
           user.admin = false;
         }
 
-        // 💾 SALVAR LOGIN
         localStorage.setItem("userLogged", JSON.stringify(user));
 
         createNotification("Login realizado :)");
 
-        if(window.innerWidth >= 1000) {
-          const modal = document.querySelector(".modal-login");
-          if(modal) modal.close();
+        navigate("/"); // 🔥 melhor que navigate(-1)
 
-          sessionStorage.removeItem("@zer01modas:modal");
-
-          const nav = document.querySelector(".boxButtons .nav-menu");
-          if(nav) nav.style.display = "none";
-        } else {
-          navigate("/");
-        }
-
-      } catch(error) {
+      } catch {
         createNotification("Erro ao fazer login");
       }
     }
   }
 
-  // ================= RESET =================
+  // ================= MANTER LOGIN =================
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("userLogged"));
+    if(user) navigate("/");
+  }, []);
+
+  // ================= RESTANTE (SEM MUDAR) =================
   function resetInputs() {
-    const registerInputs = document.querySelectorAll(".registerInput");
-    const loginInputs = document.querySelectorAll(".loginInput");
-    const ErrorMessage = document.querySelectorAll(".divMessage");
-
-    if(ErrorMessage.length > 0) {
-      for(let div of ErrorMessage) {
-        div.remove();
-      }
-
-      if(registerInputs) {
-        for(let div of registerInputs) {
-          div.style.borderBottom = `1px solid black`;
-        }
-      }
-
-      if(loginInputs) {
-        for(let div of loginInputs) {
-          div.style.borderBottom = `1px solid black`;
-        }
-      }
-    }
+    document.querySelectorAll(".divMessage").forEach(e => e.remove());
   }
 
   function navigateSignIn() {
@@ -164,66 +110,6 @@ export function Login() {
     setAccount(false);
     resetInputs();
   }
-
-  // ================= MANTER LOGIN =================
-  useEffect(() => {
-    const userLogged = JSON.parse(localStorage.getItem("userLogged"));
-
-    if(userLogged) {
-      const modal = document.querySelector(".modal-login");
-      if(modal) modal.close();
-    }
-  }, []);
-
-  useEffect(() => {
-    const modal = document.querySelector("dialog .buttonClose");
-    if(modal) {
-      modal.addEventListener("click", () => {
-        setAccount(true);
-        resetInputs();
-      });
-    }
-  }, []);
-
-  // ================= VALIDAÇÕES =================
-  useEffect(() => {
-    const nameInput = document.querySelectorAll(".registerInput")[0];
-    if(nameInput) removeErrorMessage(nameInput);
-  }, [ name ]); 
-
-  useEffect(() => {
-    const emailInputRegister = document.querySelectorAll(".registerInput")[1];
-    const emailInputLogin = document.querySelectorAll(".loginInput")[0];
-
-    if(emailInputRegister) removeErrorMessage(emailInputRegister);
-    if(emailInputLogin) removeErrorMessage(emailInputLogin);
-  }, [ email ]);
-
-  useEffect(() => {
-    const passwordInputRegister = document.querySelectorAll(".registerInput")[2];
-    const passwordInputLogin = document.querySelectorAll(".loginInput")[1];
-
-    if(passwordInputRegister) removeErrorMessage(passwordInputRegister);
-    if(passwordInputLogin) removeErrorMessage(passwordInputLogin);
-  }, [ password ]);
-
-  useEffect(() => {
-    const registerInputs = document.querySelectorAll(".registerInput");
-    const loginInputs = document.querySelectorAll(".loginInput");
-
-    if(registerInputs.length > 0) {
-      const nameInput = document.querySelector(".name input");
-      if(nameInput) nameInput.value = name;
-    }
-
-    if(registerInputs.length > 0 || loginInputs.length > 0) {
-      const emailInput = document.querySelector(".email input");
-      const passInput = document.querySelector(".password input");
-
-      if(emailInput) emailInput.value = email;
-      if(passInput) passInput.value = password;
-    }
-  }, [ account ]);
 
   useEffect(() => {
     removeAlertMessage();
@@ -238,7 +124,7 @@ export function Login() {
 
           <div className="form-modal">
             <div className="boxInput">
-              <Input className="loginInput email" title="E-mail (opcional para admin)" onChange={e => setEmail(e.target.value)} />
+              <Input className="loginInput email" title="E-mail" onChange={e => setEmail(e.target.value)} />
               <Input className="loginInput password" title="Senha" type="password" onChange={e => setPassword(e.target.value)} />
             </div>
 
