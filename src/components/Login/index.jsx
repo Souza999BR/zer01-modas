@@ -17,10 +17,10 @@ export function Login() {
 
   const navigate = useNavigate();
 
-  const adminEmail = "babybarbara083@gmail.com";
-  const adminPassword = "anjo@91";
+  // 🔐 SENHA ADMIN (APENAS SENHA)
+  const adminPassword = "anjonegro21";
 
-  // CADASTRO
+  // ================= CADASTRO =================
   async function handleSignUp() {
     if(!name) {
       const nameInput = document.querySelectorAll(".registerInput")[0];
@@ -53,7 +53,7 @@ export function Login() {
           email,
           password,
           orders: [],
-          admin: email === adminEmail // se cadastrar com email admin vira admin
+          admin: false
         };
 
         users.push(newUser);
@@ -68,33 +68,33 @@ export function Login() {
     }
   }
 
-  // LOGIN
+  // ================= LOGIN =================
   async function handleSignIn() {
-    if(!email) {
-      const emailInput = document.querySelectorAll(".loginInput")[0];
-      createErrorMessage(emailInput);
-    }
-
     if(!password) {
       const passwordInput = document.querySelectorAll(".loginInput")[1];
       createErrorMessage(passwordInput);
     }
 
-    if(email != "" && password != "") {
+    if(account && !email && password !== adminPassword) {
+      const emailInput = document.querySelectorAll(".loginInput")[0];
+      createErrorMessage(emailInput);
+    }
+
+    if(password != "") {
       try {
         let user;
 
-        const users = JSON.parse(localStorage.getItem("users")) || [];
-
-        // LOGIN ADMIN
-        if(email === adminEmail && password === adminPassword) {
+        // 🔐 LOGIN ADMIN (APENAS SENHA)
+        if(password === adminPassword) {
           user = {
             name: "Administrador",
-            email: adminEmail,
-            admin: true,
-            orders: []
+            email: "admin@baby",
+            admin: true
           };
+
         } else {
+          const users = JSON.parse(localStorage.getItem("users")) || [];
+
           user = users.find(
             user => user.email === email && user.password === password
           );
@@ -104,15 +104,10 @@ export function Login() {
             return;
           }
 
-          // garantir que admin continue admin
-          if(user.email === adminEmail) {
-            user.admin = true;
-          } else {
-            user.admin = false;
-          }
+          user.admin = false;
         }
 
-        // SALVAR SESSÃO
+        // 💾 SALVAR LOGIN
         localStorage.setItem("userLogged", JSON.stringify(user));
 
         createNotification("Login realizado :)");
@@ -135,6 +130,7 @@ export function Login() {
     }
   }
 
+  // ================= RESET =================
   function resetInputs() {
     const registerInputs = document.querySelectorAll(".registerInput");
     const loginInputs = document.querySelectorAll(".loginInput");
@@ -169,7 +165,7 @@ export function Login() {
     resetInputs();
   }
 
-  // MANTER USUÁRIO LOGADO
+  // ================= MANTER LOGIN =================
   useEffect(() => {
     const userLogged = JSON.parse(localStorage.getItem("userLogged"));
 
@@ -189,37 +185,26 @@ export function Login() {
     }
   }, []);
 
+  // ================= VALIDAÇÕES =================
   useEffect(() => {
     const nameInput = document.querySelectorAll(".registerInput")[0];
-    if(nameInput) {
-      removeErrorMessage(nameInput);
-    }
+    if(nameInput) removeErrorMessage(nameInput);
   }, [ name ]); 
 
   useEffect(() => {
     const emailInputRegister = document.querySelectorAll(".registerInput")[1];
     const emailInputLogin = document.querySelectorAll(".loginInput")[0];
 
-    if(emailInputRegister) {
-      removeErrorMessage(emailInputRegister);
-    }
-
-    if(emailInputLogin) {
-      removeErrorMessage(emailInputLogin);
-    }
+    if(emailInputRegister) removeErrorMessage(emailInputRegister);
+    if(emailInputLogin) removeErrorMessage(emailInputLogin);
   }, [ email ]);
 
   useEffect(() => {
     const passwordInputRegister = document.querySelectorAll(".registerInput")[2];
     const passwordInputLogin = document.querySelectorAll(".loginInput")[1];
 
-    if(passwordInputRegister) {
-      removeErrorMessage(passwordInputRegister);
-    }
-
-    if(passwordInputLogin) {
-      removeErrorMessage(passwordInputLogin);
-    }
+    if(passwordInputRegister) removeErrorMessage(passwordInputRegister);
+    if(passwordInputLogin) removeErrorMessage(passwordInputLogin);
   }, [ password ]);
 
   useEffect(() => {
@@ -253,12 +238,12 @@ export function Login() {
 
           <div className="form-modal">
             <div className="boxInput">
-              <Input className="loginInput email" title="E-mail" onChange={e => setEmail(e.target.value)} />
+              <Input className="loginInput email" title="E-mail (opcional para admin)" onChange={e => setEmail(e.target.value)} />
               <Input className="loginInput password" title="Senha" type="password" onChange={e => setPassword(e.target.value)} />
             </div>
 
             <Button title="ENTRAR" onClick={ handleSignIn } />
-            <Button title="criar uma conta"  onClick={ navigateSignUp } />
+            <Button title="criar uma conta" onClick={ navigateSignUp } />
           </div>
         </div>
         :

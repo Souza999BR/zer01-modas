@@ -26,52 +26,33 @@ export function EditCatalog({ ...rest }) {
   const [ description, setDescription ] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
 
-  const adminPassword = "123456";
+  // 🔐 SENHA ADMIN (apenas você sabe)
+  const adminPassword = "anjonegro21";
 
   const path = useLocation().pathname;
   const navigate = useNavigate();
 
-  // 🔐 ATIVAR ADMIN
-  function activateAdmin() {
-    const senha = prompt("Digite a senha do administrador:");
-
-    if(senha === adminPassword) {
-      localStorage.setItem("isAdmin", "true");
-      setIsAdmin(true);
-      createNotification("Modo administrador ativado");
-    } else {
-      createNotification("Senha incorreta");
-    }
-  }
-
-  // 🔐 VERIFICAR ADMIN
+  // 🔐 VERIFICA OU PEDE SENHA
   function checkAdmin() {
-    const admin = localStorage.getItem("isAdmin");
+    const admin = localStorage.getItem("adminAccess");
 
     if(admin === "true") {
       setIsAdmin(true);
       return true;
     }
 
-    createNotification("Apenas administrador pode editar");
-    return false;
-  }
+    const password = prompt("Digite a senha de administrador:");
 
-  // 👆 CLICAR 6 VEZES NA LOGO
-  function handleLogoClick() {
-    const newCount = clickCount + 1;
-    setClickCount(newCount);
-
-    if(newCount >= 6) {
-      activateAdmin();
-      setClickCount(0);
+    if(password === adminPassword) {
+      localStorage.setItem("adminAccess", "true");
+      setIsAdmin(true);
+      createNotification("Acesso liberado como administrador");
+      return true;
+    } else {
+      createNotification("Senha incorreta");
+      return false;
     }
-
-    setTimeout(() => {
-      setClickCount(0);
-    }, 3000);
   }
 
   async function handleNewProduct() {
@@ -79,7 +60,7 @@ export function EditCatalog({ ...rest }) {
 
     verifyValues();
 
-    if(name && price && description) {
+    if(name != "" && price != "" && description != "") {
       try {
         const product_id = await createProduct({ name, category, price, promotion, description });
         await AddAttributes(product_id);
@@ -127,10 +108,17 @@ export function EditCatalog({ ...rest }) {
     const divName = document.querySelector("#inputName");
     const divPrice = document.querySelector("#inputPrice");
     const divDescription = document.querySelector(".textarea");
+    const formDivs = [ divName, divPrice ];
 
-    if(divName.querySelector("input").value == "") createErrorMessage(divName);
-    if(divPrice.querySelector("input").value == "") createErrorMessage(divPrice);
-    if(divDescription.querySelector("textarea").value == "") createErrorMessage(divDescription);
+    for(let div of formDivs) {
+      if(div.querySelector("input").value == "") {
+        createErrorMessage(div);
+      }
+    }
+    
+    if(divDescription.querySelector("textarea").value == "") {
+      createErrorMessage(divDescription);
+    }
   }
 
   function clearPage() {
@@ -138,7 +126,9 @@ export function EditCatalog({ ...rest }) {
     const select = document.querySelector(".label_select select");
     const textarea = document.querySelector("#textarea");
 
-    allInputs.forEach(input => input.value = "");
+    Array.from(allInputs).map(input => {
+      input.value = "";
+    });
 
     select.value = "FEMININO";
     textarea.value = "";
@@ -154,33 +144,12 @@ export function EditCatalog({ ...rest }) {
     saveModelDetailsStorage([]);
   }
 
-  // 🔥 DETECTAR ADMIN AO ABRIR
+  // 🔄 manter admin logado
   useEffect(() => {
-    const admin = localStorage.getItem("isAdmin");
+    const admin = localStorage.getItem("adminAccess");
     if(admin === "true") {
       setIsAdmin(true);
     }
-  }, []);
-
-  // 🔥 ADICIONAR EVENTO NA LOGO
-  useEffect(() => {
-    const logo = document.querySelector(".logo");
-
-    if(logo) {
-      logo.addEventListener("click", handleLogoClick);
-    }
-
-    return () => {
-      if(logo) logo.removeEventListener("click", handleLogoClick);
-    };
-  });
-
-  // ❌ REMOVER AUTOCOMPLETE (email aparecendo)
-  useEffect(() => {
-    const inputs = document.querySelectorAll("input");
-    inputs.forEach(input => {
-      input.setAttribute("autocomplete", "off");
-    });
   }, []);
 
   useEffect(() => {
@@ -205,14 +174,13 @@ export function EditCatalog({ ...rest }) {
   return (
     <Container {...rest}>
 
-      {/* LOGOUT ADMIN */}
       {isAdmin && (
         <Button 
-          title="Logout Admin" 
+          title="Sair do Admin" 
           onClick={() => {
-            localStorage.removeItem("isAdmin");
+            localStorage.removeItem("adminAccess");
             setIsAdmin(false);
-            createNotification("Admin desativado");
+            createNotification("Saiu do modo admin");
           }} 
         />
       )}
@@ -236,34 +204,38 @@ export function EditCatalog({ ...rest }) {
 
       <div className="colors">
         <p>Cores</p>
-        <ChangeColor />
+        <div className="tags">
+          <ChangeColor />
+        </div>
       </div>
 
       <div className="details">
         <p>Detalhes</p>
-        <OutfitTag $detail />
+        <div className="tags">
+          <OutfitTag $detail />
+        </div>
       </div>
 
       <div className="modelDetails">
         <p>Medidas do(a) modelo</p>
-        <OutfitTag $modelDetail />
+        <div className="tags">
+          <OutfitTag $modelDetail />
+        </div>
       </div>
 
       <label className="textarea">
         Descrição
-        <textarea id="textarea" onChange={e => setDescription(e.target.value)}></textarea>
+        <textarea id="textarea" placeholder="Breve descrição sobre o produto" onChange={e => setDescription(e.target.value)}></textarea>
       </label>
 
       {
-        isAdmin && (
-          path == "/new" ?
-          <Button title="SALVAR" onClick={ handleNewProduct } />
-          :
-          <div className="buttons">
-            <Button title="SALVAR" onClick={ handleEditProduct } />
-            <Button title="EXCLUIR" onClick={ handleDeleteProduct } />
-          </div>
-        )
+        path == "/new" ?
+        <Button title="SALVAR" onClick={ handleNewProduct } />
+        :
+        <div className="buttons">
+          <Button title="SALVAR" onClick={ handleEditProduct } />
+          <Button title="EXCLUIR" onClick={ handleDeleteProduct } />
+        </div>
       }
 
     </Container>
