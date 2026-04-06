@@ -20,22 +20,41 @@ export function Login() {
   const adminEmail = "babybarbara083@gmail.com";
   const adminPassword = "anjonegro21";
 
-  // ================= CADASTRO =================
+  // CADASTRO
   async function handleSignUp() {
-    if(!name) createErrorMessage(document.querySelectorAll(".registerInput")[0]);
-    if(!email) createErrorMessage(document.querySelectorAll(".registerInput")[1]);
-    if(!password) createErrorMessage(document.querySelectorAll(".registerInput")[2]);
+    if(!name) {
+      const input = document.querySelectorAll(".registerInput")[0];
+      if(input) createErrorMessage(input);
+    }
 
-    if(name && email && password) {
+    if(!email) {
+      const input = document.querySelectorAll(".registerInput")[1];
+      if(input) createErrorMessage(input);
+    }
+
+    if(!password) {
+      const input = document.querySelectorAll(".registerInput")[2];
+      if(input) createErrorMessage(input);
+    }
+
+    if(name !== "" && email !== "" && password !== "") {
       try {
         const users = JSON.parse(localStorage.getItem("users")) || [];
 
-        if(users.find(user => user.email === email)) {
+        const userExists = users.find(user => user.email === email);
+
+        if(userExists) {
           createNotification("Email já cadastrado");
           return;
         }
 
-        const newUser = { name, email, password, orders: [], admin: false };
+        const newUser = {
+          name,
+          email,
+          password,
+          orders: [],
+          admin: false
+        };
 
         users.push(newUser);
         localStorage.setItem("users", JSON.stringify(users));
@@ -43,22 +62,29 @@ export function Login() {
         createNotification("Usuário cadastrado com sucesso :)");
         setAccount(true);
 
-      } catch {
+      } catch(error) {
         createNotification("Erro ao cadastrar usuário");
       }
     }
   }
 
-  // ================= LOGIN =================
+  // LOGIN
   async function handleSignIn() {
-    if(!email) createErrorMessage(document.querySelectorAll(".loginInput")[0]);
-    if(!password) createErrorMessage(document.querySelectorAll(".loginInput")[1]);
+    if(!email) {
+      const input = document.querySelectorAll(".loginInput")[0];
+      if(input) createErrorMessage(input);
+    }
 
-    if(email && password) {
+    if(!password) {
+      const input = document.querySelectorAll(".loginInput")[1];
+      if(input) createErrorMessage(input);
+    }
+
+    if(email !== "" && password !== "") {
       try {
         let user;
 
-        // ADMIN
+        // LOGIN ADMIN
         if(email === adminEmail && password === adminPassword) {
           user = {
             name: "Administrador",
@@ -68,37 +94,58 @@ export function Login() {
         } else {
           const users = JSON.parse(localStorage.getItem("users")) || [];
 
-          user = users.find(u => u.email === email && u.password === password);
+          user = users.find(
+            u => u.email === email && u.password === password
+          );
 
           if(!user) {
             createNotification("Email ou senha incorretos");
             return;
           }
 
-          user.admin = false;
+          // garantir que não vira admin por erro
+          user = { ...user, admin: false };
         }
 
+        // SALVAR SESSÃO
         localStorage.setItem("userLogged", JSON.stringify(user));
 
         createNotification("Login realizado :)");
 
-        navigate("/"); // 🔥 melhor que navigate(-1)
+        if(window.innerWidth >= 1000) {
+          const modal = document.querySelector(".modal-login");
+          if(modal) modal.close();
 
-      } catch {
+          sessionStorage.removeItem("@zer01modas:modal");
+
+          const nav = document.querySelector(".boxButtons .nav-menu");
+          if(nav) nav.style.display = "none";
+        } else {
+          navigate("/");
+        }
+
+      } catch(error) {
         createNotification("Erro ao fazer login");
       }
     }
   }
 
-  // ================= MANTER LOGIN =================
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("userLogged"));
-    if(user) navigate("/");
-  }, []);
-
-  // ================= RESTANTE (SEM MUDAR) =================
   function resetInputs() {
-    document.querySelectorAll(".divMessage").forEach(e => e.remove());
+    const registerInputs = document.querySelectorAll(".registerInput");
+    const loginInputs = document.querySelectorAll(".loginInput");
+    const ErrorMessage = document.querySelectorAll(".divMessage");
+
+    if(ErrorMessage.length > 0) {
+      ErrorMessage.forEach(div => div.remove());
+
+      registerInputs.forEach(input => {
+        input.style.borderBottom = `1px solid black`;
+      });
+
+      loginInputs.forEach(input => {
+        input.style.borderBottom = `1px solid black`;
+      });
+    }
   }
 
   function navigateSignIn() {
@@ -110,6 +157,63 @@ export function Login() {
     setAccount(false);
     resetInputs();
   }
+
+  // MANTER USUÁRIO LOGADO
+  useEffect(() => {
+    const userLogged = JSON.parse(localStorage.getItem("userLogged"));
+
+    if(userLogged) {
+      const modal = document.querySelector(".modal-login");
+      if(modal) modal.close();
+    }
+  }, []);
+
+  useEffect(() => {
+    const modal = document.querySelector("dialog .buttonClose");
+
+    if(modal) {
+      const handler = () => {
+        setAccount(true);
+        resetInputs();
+      };
+
+      modal.addEventListener("click", handler);
+
+      return () => modal.removeEventListener("click", handler);
+    }
+  }, []);
+
+  useEffect(() => {
+    const input = document.querySelectorAll(".registerInput")[0];
+    if(input) removeErrorMessage(input);
+  }, [ name ]);
+
+  useEffect(() => {
+    const register = document.querySelectorAll(".registerInput")[1];
+    const login = document.querySelectorAll(".loginInput")[0];
+
+    if(register) removeErrorMessage(register);
+    if(login) removeErrorMessage(login);
+  }, [ email ]);
+
+  useEffect(() => {
+    const register = document.querySelectorAll(".registerInput")[2];
+    const login = document.querySelectorAll(".loginInput")[1];
+
+    if(register) removeErrorMessage(register);
+    if(login) removeErrorMessage(login);
+  }, [ password ]);
+
+  useEffect(() => {
+    const nameInput = document.querySelector(".name input");
+    const emailInput = document.querySelector(".email input");
+    const passInput = document.querySelector(".password input");
+
+    if(nameInput) nameInput.value = name;
+    if(emailInput) emailInput.value = email;
+    if(passInput) passInput.value = password;
+
+  }, [ account ]);
 
   useEffect(() => {
     removeAlertMessage();
